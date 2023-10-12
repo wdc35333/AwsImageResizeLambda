@@ -13,13 +13,13 @@ exports.handler = async (event) => {
    try {
       const Bucket = event.Records[0].s3.bucket.name;
       const Key = event.Records[0].s3.object.key;
-      const s3obj = { Bucket, Key};
-      console.log(`Image Resizing: ${Key}`);
+      const s3obj = { Bucket, Key };
+      console.log(`이미지 리사이징 시작: ${Key}`);
+      
       const image = await s3.getObject(s3obj).promise();
       await Promise.all(
          transformationOptions.map(async ({name, width}) => {
             try {
-               console.log("try");
                const dupVerification = Key.split('_')[Key.split('_').length - 1][0];
                if (dupVerification === 'w') {
                   console.log('이미 처리된 파일');
@@ -29,6 +29,7 @@ exports.handler = async (event) => {
                   }
                }
                const newKey = `${Key}_${name}`
+               console.log(`생성중: ${newKey}`);
                const resizedImage = await sharp(image.Body)
                   .rotate()
                   .resize(width)
@@ -40,9 +41,10 @@ exports.handler = async (event) => {
                   Key: newKey,
                })
                .promise();
-               console.log('put', resizedImage.length);
+               console.log(`${newKey} 파일크기: ${resizedImage.length}` );
                throw newKey;
             } catch(err) {
+               console.log(`error: ${err}`);
                throw err
             }
          })
@@ -52,7 +54,7 @@ exports.handler = async (event) => {
          body: event,
       }
    } catch (err){
-      console.log(err);
+      console.log(`error: ${err}`);
       return { 
          statusCode: 500,
          body: event,
