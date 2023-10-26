@@ -19,6 +19,17 @@ exports.handler = async (event) => {
       const image = await s3.getObject(s3obj).promise();
       await Promise.all(
          transformationOptions.map(async ({name, width}) => {
+            // 이미지 여부 확인
+            try {
+              const isImage = await s3.headObject(s3obj).promise();
+            } catch (err) {
+              console.log(`이미지 ${key}가 존재하지 않습니다. 리사이징 작업을 스킵합니다.`)
+              return {
+                statusCode: 400,
+                body: event,
+              }
+            }
+            // 이미지 여부 확인 끝
             try {
                const dupVerification = Key.split('_')[Key.split('_').length - 1][0];
                if (dupVerification === 'w') {
